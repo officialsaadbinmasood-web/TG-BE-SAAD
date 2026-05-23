@@ -30,11 +30,10 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from providers.openai_provider import OpenAIEmbeddingProvider, OpenAILLMProvider
-from src.retriever import Retriever
-from src.rag_chain import RAGChain
-from src.cache import SemanticCache
-from src.config import ALLOWED_ORIGINS, TRUSTED_PROXIES
-
+from retriever import Retriever
+from rag_chain import RAGChain
+from cache import SemanticCache
+from config import ALLOWED_ORIGINS, TRUSTED_PROXIES
 # ── Logging ───────────────────────────────────────────────────────────────────
 # Logs to stdout in JSON — safe to ship to any aggregator (Datadog, CloudWatch).
 # NEVER log: message content, reply text, history, or full IP addresses.
