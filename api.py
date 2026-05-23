@@ -1,4 +1,9 @@
 """
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 FastAPI backend for the Technovate Global RAG chatbot.
 Run: uvicorn api:app --reload --port 8000
 
