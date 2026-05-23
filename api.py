@@ -22,6 +22,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # the process is launched (local dev, Docker, Railway, etc.)
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
+sys.path.append(str(BASE_DIR / "src"))
 
 from providers.openai_provider import OpenAIEmbeddingProvider, OpenAILLMProvider
 from retriever import Retriever
