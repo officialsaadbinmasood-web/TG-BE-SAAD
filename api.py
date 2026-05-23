@@ -30,7 +30,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.providers.openai_provider import OpenAIEmbeddingProvider, OpenAILLMProvider
+from providers.openai_provider import OpenAIEmbeddingProvider, OpenAILLMProvider
 from src.retriever import Retriever
 from src.rag_chain import RAGChain
 from src.cache import SemanticCache
