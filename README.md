@@ -24,7 +24,7 @@ RAGChain (rag_chain.py)
     ▼
 reply + cache store
 ```
-
+test
 **Key design choices:**
 - Cache is only consulted/written for standalone (no-history) queries. Follow-ups bypass it to prevent context-dependent answers from polluting the cache.
 - The query rewriter expands vague follow-ups (e.g. "what about the price?") into self-contained search queries using the last 6 conversation turns.
