@@ -17,9 +17,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 
-# ── Path setup ────────────────────────────────────────────────────────────────
-# Ensures the project root is always on sys.path regardless of how/where
-# the process is launched (local dev, Docker, Railway, etc.)
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(str(BASE_DIR))
 sys.path.append(str(BASE_DIR / "src"))
@@ -30,19 +27,6 @@ from rag_chain import RAGChain
 from cache import SemanticCache
 from config import ALLOWED_ORIGINS, TRUSTED_PROXIES
 
-"""
-FastAPI backend for the Technovate Global RAG chatbot.
-Run: uvicorn api:app --reload --port 8000
-
-Rate limiting : 20 requests / minute per IP  (slowapi)
-Semantic cache: standalone queries only (history=[] → cache eligible)
-               follow-up queries (history non-empty) bypass cache so that
-               context-dependent answers are always freshly generated.
-"""
-
-# ── Logging ───────────────────────────────────────────────────────────────────
-# Logs to stdout in JSON — safe to ship to any aggregator (Datadog, CloudWatch).
-# NEVER log: message content, reply text, history, or full IP addresses.
 _log_handler = logging.StreamHandler()
 _log_handler.setFormatter(
     jsonlogger.JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -53,18 +37,16 @@ logger.setLevel(logging.INFO)
 
 
 def _truncate_ip(ip: str) -> str:
-    """Log only the first two octets of IPv4 addresses for privacy."""
     parts = ip.split(".")
     if len(parts) == 4:
         return f"{parts[0]}.{parts[1]}.*.*"
     return "ipv6"
 
 
-# ── Constants ─────────────────────────────────────────────────────────────────
 MAX_MESSAGE_CHARS = 2_000
 MAX_HISTORY_TURNS = 10
 
-# ── Rate limiter ──────────────────────────────────────────────────────────────
+
 def _real_ip(request: Request) -> str:
     direct_ip = get_remote_address(request)
     if direct_ip in TRUSTED_PROXIES:
@@ -88,7 +70,6 @@ app.add_middleware(
 )
 
 
-# ── Security headers middleware ───────────────────────────────────────────────
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -103,7 +84,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# ── Fallback ──────────────────────────────────────────────────────────────────
 FALLBACK_RESPONSE = (
     "Sorry, I'm having trouble right now. Please contact our team directly:\n\n"
     "- **Email:** support@technovateglobal.com\n"
@@ -113,7 +93,6 @@ FALLBACK_RESPONSE = (
     "- **Contact form:** https://technovateglobal.com/contact"
 )
 
-# ── Shared singletons (initialised once at startup) ───────────────────────────
 _embedder = OpenAIEmbeddingProvider()
 _llm = OpenAILLMProvider()
 _retriever = Retriever(_embedder)
@@ -121,7 +100,6 @@ _chain = RAGChain(_retriever, _llm)
 _cache = SemanticCache(_embedder)
 
 
-# ── Schemas ───────────────────────────────────────────────────────────────────
 class HistoryMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(..., max_length=MAX_MESSAGE_CHARS)
@@ -144,7 +122,6 @@ class ChatResponse(BaseModel):
     cached: bool = False
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
 @app.post("/chat", response_model=ChatResponse)
 @limiter.limit("20/minute")
 async def chat(req: ChatRequest, request: Request) -> ChatResponse:
@@ -240,7 +217,6 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
             yield "data: [DONE]\n\n"
             return
 
-        # Send [DONE] before caching so the client is unblocked immediately.
         yield "data: [DONE]\n\n"
 
         logger.info("chat_stream", extra={
@@ -258,7 +234,7 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
         generate(),
         media_type="text/event-stream",
         headers={
-            "X-Accel-Buffering": "no",   # tell Nginx not to buffer this response
+            "X-Accel-Buffering": "no",
             "Cache-Control": "no-cache",
         },
     )
