@@ -1,22 +1,10 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-"""
-FastAPI backend for the Technovate Global RAG chatbot.
-Run: uvicorn api:app --reload --port 8000
-
-Rate limiting : 20 requests / minute per IP  (slowapi)
-Semantic cache: standalone queries only (history=[] → cache eligible)
-               follow-up queries (history non-empty) bypass cache so that
-               context-dependent answers are always freshly generated.
-"""
-
 import json
 import logging
 import os
+import sys
 import time
 import uuid
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request, Header
@@ -29,11 +17,28 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 
+# ── Path setup ────────────────────────────────────────────────────────────────
+# Ensures the project root is always on sys.path regardless of how/where
+# the process is launched (local dev, Docker, Railway, etc.)
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.append(str(BASE_DIR))
+
 from providers.openai_provider import OpenAIEmbeddingProvider, OpenAILLMProvider
 from retriever import Retriever
 from rag_chain import RAGChain
 from cache import SemanticCache
 from config import ALLOWED_ORIGINS, TRUSTED_PROXIES
+
+"""
+FastAPI backend for the Technovate Global RAG chatbot.
+Run: uvicorn api:app --reload --port 8000
+
+Rate limiting : 20 requests / minute per IP  (slowapi)
+Semantic cache: standalone queries only (history=[] → cache eligible)
+               follow-up queries (history non-empty) bypass cache so that
+               context-dependent answers are always freshly generated.
+"""
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 # Logs to stdout in JSON — safe to ship to any aggregator (Datadog, CloudWatch).
 # NEVER log: message content, reply text, history, or full IP addresses.
