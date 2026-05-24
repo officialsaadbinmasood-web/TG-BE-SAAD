@@ -96,9 +96,6 @@ FALLBACK_RESPONSE = (
 
 _embedder = OpenAIEmbeddingProvider()
 _llm = OpenAILLMProvider()
-import asyncio
-from src.indexer import build_index
-asyncio.get_event_loop().run_until_complete(build_index(_embedder))
 _retriever = Retriever(_embedder)
 _chain = RAGChain(_retriever, _llm)
 _cache = SemanticCache(_embedder)
