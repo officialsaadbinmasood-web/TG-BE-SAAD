@@ -102,9 +102,17 @@ FALLBACK_RESPONSE = (
 
 _embedder = OpenAIEmbeddingProvider()
 _llm = OpenAILLMProvider()
-_retriever = Retriever(_embedder)
-_chain = RAGChain(_retriever, _llm)
 _cache = SemanticCache(_embedder)
+_retriever = None
+_chain = None
+
+@app.on_event("startup")
+async def startup_event():
+    global _retriever, _chain
+    from src.indexer import build_index
+    await build_index(_embedder)
+    _retriever = Retriever(_embedder)
+    _chain = RAGChain(_retriever, _llm)
 
 
 class HistoryMessage(BaseModel):
