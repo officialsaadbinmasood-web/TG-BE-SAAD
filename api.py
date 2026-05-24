@@ -60,6 +60,12 @@ def _real_ip(request: Request) -> str:
 limiter = Limiter(key_func=_real_ip, default_limits=["20/minute"])
 
 app = FastAPI(title="Technovate Global Chatbot")
+
+@app.on_event("startup")
+async def startup_event():
+    from src.indexer import build_index
+    await build_index(_embedder)
+    
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
